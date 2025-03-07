@@ -140,6 +140,8 @@ def update_cdu_csv(data, folder_id, file_name):
     
     # Combinar con los datos existentes o usar solo la nueva fila
     if existing_df is not None:
+        # Asegurarse de que las columnas coincidan
+        existing_df = existing_df.reindex(columns=["DATE", "FLT NUM", "OUT", "OFF", "ON", "IN"])
         final_df = pd.concat([existing_df, new_df], ignore_index=True)
     else:
         final_df = new_df
@@ -148,6 +150,9 @@ def update_cdu_csv(data, folder_id, file_name):
     csv_buffer = StringIO()
     final_df.to_csv(csv_buffer, index=False, encoding='utf-8')
     csv_data_final = csv_buffer.getvalue()
+    
+    # Debugging: Mostrar el contenido del CSV antes de subirlo
+    print("Contenido de CDU.csv antes de subir:", csv_data_final)
     
     # Subir o actualizar en Drive
     query = f"'{folder_id}' in parents and name = '{file_name}' and trashed = false"
