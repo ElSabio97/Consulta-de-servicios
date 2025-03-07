@@ -1,5 +1,5 @@
 import streamlit as st
-from functions import process_html_table, update_csv_in_drive, download_csv_from_drive, generate_pdf, get_drive_service
+from functions import process_html_table, update_csv_in_drive, download_csv_from_drive, generate_pdf, update_cdu_csv
 from datetime import datetime
 
 # Configuración de la página
@@ -45,11 +45,8 @@ if st.button("Generar PDF"):
         if df is None:
             st.error("No se encontró el archivo CSV en Google Drive.")
         else:
-            # Filtrar por mes y año
-            mes_num = meses.index(mes_seleccionado) + 1  # Convertir a número (1-12)
+            mes_num = meses.index(mes_seleccionado) + 1
             pdf_buffer = generate_pdf(df, mes_num, anio_seleccionado)
-            
-            # Ofrecer el PDF para descarga
             st.download_button(
                 label="Descargar PDF",
                 data=pdf_buffer,
@@ -58,3 +55,33 @@ if st.button("Generar PDF"):
             )
     except Exception as e:
         st.error(f"Error al generar el PDF: {str(e)}")
+
+# Botón para abrir el formulario de CDU
+st.subheader("Añadir datos a CDU.csv")
+if st.button("Añadir entrada a CDU"):
+    with st.form(key='cdu_form'):
+        st.write("Ingrese los datos para CDU.csv")
+        date = st.text_input("DATE", value=datetime.now().strftime("%d/%m/%Y %H:%M"))
+        flt_num = st.text_input("FLT NUM")
+        out = st.text_input("OUT")
+        off = st.text_input("OFF")
+        on = st.text_input("ON")
+        in_ = st.text_input("IN")
+        submit_button = st.form_submit_button(label="Guardar en CDU.csv")
+        
+        if submit_button:
+            try:
+                folder_id = '1B8gnCmbBaGMBT77ba4ntjpZj_NkJcvuI'
+                file_name = 'CDU.csv'
+                data = {
+                    "DATE": date,
+                    "FLT NUM": flt_num,
+                    "OUT": out,
+                    "OFF": off,
+                    "ON": on,
+                    "IN": in_
+                }
+                update_cdu_csv(data, folder_id, file_name)
+                st.success("¡Datos guardados en CDU.csv con éxito!")
+            except Exception as e:
+                st.error(f"Error al guardar en CDU.csv: {str(e)}")
