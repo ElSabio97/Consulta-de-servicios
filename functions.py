@@ -3,7 +3,7 @@ import pandas as pd
 from bs4 import BeautifulSoup
 from io import StringIO, BytesIO
 import json
-from google.oauth2.credentials import Credentials
+from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseUpload
 from datetime import datetime
