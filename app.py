@@ -1,5 +1,5 @@
 import streamlit as st
-from functions import process_html_table, update_csv_in_drive, download_csv_from_drive, generate_pdf, update_cdu_csv
+from functions import process_html_table, update_csv_in_drive, download_csv_from_drive, generate_pdf, update_cdu_csv, get_drive_service
 from datetime import datetime
 
 # Configuración de la página
@@ -58,14 +58,14 @@ if st.button("Generar PDF"):
 
 # Botón para abrir el formulario de CDU
 st.subheader("Añadir datos a CDU.csv")
-if st.button("Añadir entrada a CDU"):
+with st.expander("Añadir entrada a CDU", expanded=False):
     with st.form(key='cdu_form'):
         st.write("Ingrese los datos para CDU.csv")
         date = st.text_input("DATE", value=datetime.now().strftime("%d/%m/%Y %H:%M"))
         flt_num = st.text_input("FLT NUM")
         out = st.text_input("OUT")
         off = st.text_input("OFF")
-        on = st.text_input("ON")
+        on_ = st.text_input("ON")
         in_ = st.text_input("IN")
         submit_button = st.form_submit_button(label="Guardar en CDU.csv")
         
@@ -78,9 +78,11 @@ if st.button("Añadir entrada a CDU"):
                     "FLT NUM": flt_num,
                     "OUT": out,
                     "OFF": off,
-                    "ON": on,
+                    "ON": on_,
                     "IN": in_
                 }
+                # Debugging: Mostrar los datos antes de enviarlos
+                st.write("Datos enviados:", data)
                 update_cdu_csv(data, folder_id, file_name)
                 st.success("¡Datos guardados en CDU.csv con éxito!")
             except Exception as e:
