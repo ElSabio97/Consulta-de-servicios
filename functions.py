@@ -102,25 +102,13 @@ def update_csv_in_drive(csv_data, folder_id, file_name):
 
 # Función para generar el PDF
 def generate_pdf(df, mes, anio):
-    """
-    Genera un PDF con los datos del CSV filtrados por mes y año, excluyendo 'Función' y 'Flota'.
-    """
-    # Parsear las fechas y filtrar por mes y año
     df['parsed_date'] = df['Inicio'].apply(parse_date)
     df_filtered = df[(df['parsed_date'].dt.month == mes) & (df['parsed_date'].dt.year == anio)]
-    
-    # Eliminar columnas no deseadas y la columna temporal
     columns_to_keep = [col for col in df.columns if col not in ['Función', 'Flota', 'parsed_date']]
     df_filtered = df_filtered[columns_to_keep]
-    
-    # Crear el buffer para el PDF
     pdf_buffer = BytesIO()
     doc = SimpleDocTemplate(pdf_buffer, pagesize=letter)
-    
-    # Preparar los datos para la tabla
     data = [df_filtered.columns.tolist()] + df_filtered.values.tolist()
-    
-    # Crear la tabla con ReportLab
     table = Table(data)
     table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
@@ -132,10 +120,44 @@ def generate_pdf(df, mes, anio):
         ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
         ('GRID', (0, 0), (-1, -1), 1, colors.black),
     ]))
-    
-    # Construir el PDF
     elements = [table]
     doc.build(elements)
     pdf_buffer.seek(0)
-    
     return pdf_buffer
+
+# Función para actualizar CDU.csv
+def update_cdu_csv(data, folder_id, file_name):
+    """
+    Actualiza o crea CDU.csv en Google Drive con una nueva fila de datos.
+    """
+    service = get_drive_service()
+    
+    # Crear DataFrame con la nueva fila
+    new_df = pd.DataFrame([data], columns=["DATE", "FLT NUM", "OUT", "OFF", "ON", "IN"])
+    
+    # Descargar el CSV existente si existe
+    existing_df = download_csv_from_drive(service, folder_id, file_name)
+    
+    # Combinar con los datos existentes o usar solo la nueva fila
+    if existing_df is not None:
+        final_df = pd.concat([existing_df, new_df], ignore_index=True)
+    else:
+        final_df = new_df
+    
+    # Convertir a CSV
+    csv_buffer = StringIO()
+    final_df.to_csv(csv_buffer, index=False, encoding='utf-8')
+    csv_data_final = csv_buffer.getvalue()
+    
+    # Subir o actualizar en Drive
+    query = f"'{folder_id}' in parents and name = '{file_name}' and trashed = false"
+    response = service.files().list(q=query, spaces='drive', fields='files(id, name)').execute()
+    files = response.get('files', [])
+    media = MediaIoBaseUpload(StringIO(csv_data_final), mimetype='text/csv')
+    
+    if files:
+        file_id = files[0]['id']
+        service.files().update(fileId=file_id, media_body=media).execute()
+    else:
+        file_metadata = {'name': file_name, 'parents': [folder_id]}
+        service.files().create(body=file_metadata, media_body=media).execute()
