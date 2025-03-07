@@ -37,8 +37,11 @@ def process_html_table(html_content):
         raise ValueError("No se encontró una tabla válida en el HTML proporcionado.")
     
     df = pd.read_html(str(table))[0]
+    if df.empty:
+        raise ValueError("La tabla HTML no contiene datos válidos.")
+    
     csv_buffer = StringIO()
-    df.to_csv(csv_buffer, index=False)
+    df.to_csv(csv_buffer, index=False, encoding='utf-8')
     return csv_buffer.getvalue()
 
 # Función para descargar el CSV de Google Drive
@@ -59,17 +62,20 @@ def download_csv_from_drive(service, folder_id, file_name):
     downloader = request.execute()
     file_buffer.write(downloader)
     file_buffer.seek(0)
-    return pd.read_csv(file_buffer)
+    
+    # Intentar leer con UTF-8, fallback a latin1 si falla
+    try:
+        return pd.read_csv(file_buffer, encoding='utf-8')
+    except UnicodeDecodeError:
+        file_buffer.seek(0)  # Volver al inicio del buffer
+        return pd.read_csv(file_buffer, encoding='latin1')
 
 # Función para parsear fechas con múltiples formatos
 def parse_date(date_str):
     """
     Convierte una cadena de fecha en un objeto datetime manejando diferentes formatos.
     """
-    # Quitar "(LT)" si está presente
-    date_str = date_str.replace(" (LT)", "").strip()
-    
-    # Intentar diferentes formatos
+    date_str = str(date_str).replace(" (LT)", "").strip()
     for fmt in ("%d/%m/%Y %H:%M", "%d/%m/%Y"):
         try:
             return datetime.strptime(date_str, fmt)
@@ -85,7 +91,10 @@ def update_csv_in_drive(csv_data, folder_id, file_name):
     service = get_drive_service()
     
     # Convertir el CSV de la tabla HTML a DataFrame
-    new_df = pd.read_csv(StringIO(csv_data))
+    try:
+        new_df = pd.read_csv(StringIO(csv_data), encoding='utf-8')
+    except UnicodeDecodeError:
+        new_df = pd.read_csv(StringIO(csv_data), encoding='latin1')
     
     # Obtener la fecha de referencia (segunda columna, primera fila)
     ref_date_str = new_df.iloc[0, 1]  # Segunda columna (índice 1)
@@ -104,12 +113,11 @@ def update_csv_in_drive(csv_data, folder_id, file_name):
         # Combinar con los nuevos datos
         final_df = pd.concat([filtered_df, new_df], ignore_index=True)
     else:
-        # Si no hay archivo existente, usar solo los nuevos datos
         final_df = new_df
     
     # Convertir el DataFrame final a CSV
     csv_buffer = StringIO()
-    final_df.to_csv(csv_buffer, index=False)
+    final_df.to_csv(csv_buffer, index=False, encoding='utf-8')
     csv_data_final = csv_buffer.getvalue()
     
     # Buscar si el archivo ya existe en la carpeta
@@ -121,11 +129,9 @@ def update_csv_in_drive(csv_data, folder_id, file_name):
     media = MediaIoBaseUpload(StringIO(csv_data_final), mimetype='text/csv')
     
     if files:
-        # Si el archivo existe, actualizarlo
         file_id = files[0]['id']
         service.files().update(fileId=file_id, media_body=media).execute()
     else:
-        # Si no existe, crear uno nuevo
         file_metadata = {
             'name': file_name,
             'parents': [folder_id]
