@@ -9,30 +9,14 @@ st.set_page_config(page_title="Actualizar CSV en Drive", page_icon="📊")
 st.title("¿Qué está haciendo Pedrito?")
 st.write("Descarga la progra que quieras seleccionando el mes")
 
-# Botón para procesar y actualizar directamente desde el portapapeles
-st.write("Copia la tabla HTML al portapapeles y haz clic en 'Actualizar CSV'.")
-if st.button("Actualizar CSV"):
-    # Usar un campo de texto oculto para pegar el contenido del portapapeles
-    html_input = st.text_input("Pega aquí (Ctrl+V)", value="", key="clipboard_input", label_visibility="collapsed")
-    if html_input:
-        try:
-            csv_data = process_html_table(html_input)
-            folder_id = '1B8gnCmbBaGMBT77ba4ntjpZj_NkJcvuI'
-            file_name = 'Consulta_de_servicios.csv'
-            update_csv_in_drive(csv_data, folder_id, file_name)
-            st.success("¡Archivo CSV actualizado en Google Drive con éxito!")
-        except Exception as e:
-            st.error(f"Error: {str(e)}")
-    else:
-        st.warning("Por favor, pega la tabla HTML (Ctrl+V) después de hacer clic en el botón.")
-
 # Selector de mes y generación de PDF
-st.subheader("Generar PDF por mes")
+st.subheader("Descargar programación")
 meses = [
     "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
     "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
 ]
-mes_seleccionado = st.selectbox("Selecciona un mes", meses)
+mes_actual = meses[datetime.now().month - 1]  # Mes actual (0-based index)
+mes_seleccionado = st.selectbox("Selecciona un mes", meses, index=meses.index(mes_actual))
 anio_seleccionado = st.number_input("Selecciona un año", min_value=2020, max_value=2030, value=datetime.now().year)
 
 if st.button("Generar PDF"):
@@ -81,9 +65,25 @@ with st.expander("Añadir entrada a CDU", expanded=False):
                     "ON": on_,
                     "IN": in_
                 }
-                # Debugging: Mostrar los datos antes de enviarlos
                 st.write("Datos enviados:", data)
                 update_cdu_csv(data, folder_id, file_name)
                 st.success("¡Datos guardados en CDU.csv con éxito!")
             except Exception as e:
                 st.error(f"Error al guardar en CDU.csv: {str(e)}")
+
+# Sección de actualizar CSV (apartada y colapsada)
+with st.expander("Actualizar CSV (Admin)", expanded=False):
+    st.write("Copia la tabla HTML al portapapeles y haz clic en 'Actualizar CSV'.")
+    if st.button("Actualizar CSV"):
+        html_input = st.text_input("Pega aquí (Ctrl+V)", value="", key="clipboard_input", label_visibility="collapsed")
+        if html_input:
+            try:
+                csv_data = process_html_table(html_input)
+                folder_id = '1B8gnCmbBaGMBT77ba4ntjpZj_NkJcvuI'
+                file_name = 'Consulta_de_servicios.csv'
+                update_csv_in_drive(csv_data, folder_id, file_name)
+                st.success("¡Archivo CSV actualizado en Google Drive con éxito!")
+            except Exception as e:
+                st.error(f"Error: {str(e)}")
+        else:
+            st.warning("Por favor, pega la tabla HTML (Ctrl+V) después de hacer clic en el botón.")
