@@ -17,7 +17,7 @@ from reportlab.lib.styles import getSampleStyleSheet
 SCOPES = ['https://www.googleapis.com/auth/drive']
 
 # URL del archivo airports.json en GitHub (reemplaza con tu URL real)
-AIRPORTS_URL = "https://github.com/ElSabio97/Consulta-de-servicios/blob/8d5a105dc225a3da402f0be7ac5bac251eb8146b/airports.json"
+AIRPORTS_URL = "https://raw.githubusercontent.com/ElSabio97/Consulta-de-servicios/main/airports.json"
 
 # Función para cargar los datos de aeropuertos desde GitHub
 def load_airports_data():
