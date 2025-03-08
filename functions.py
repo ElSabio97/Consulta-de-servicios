@@ -221,8 +221,23 @@ def generate_filtered_pdf(df, mes, anio, mes_nombre):
     # Definir anchos de columnas proporcionales
     col_widths = [table_width * 0.2, table_width * 0.6, table_width * 0.2]  # 20%, 60%, 20%
     
-    # Crear tabla con ajuste de texto
-    data = [['Fecha', 'Ruta', 'Turno']] + df_grouped.values.tolist()
+        # Crear tabla con ajuste de texto multilínea
+    from reportlab.platypus import Paragraph  # Asegúrate de que esto esté en los imports
+    styles = getSampleStyleSheet()
+    style_normal = styles['Normal']
+    style_normal.fontSize = 10
+    style_normal.alignment = 1  # Centrado
+
+    # Convertir datos en una lista de listas con Paragraph para multilínea
+    data = [['Fecha', 'Ruta', 'Turno']]  # Encabezados
+    for row in df_grouped.values.tolist():
+        fecha, ruta, turno = row
+        data.append([
+            Paragraph(str(fecha), style_normal),
+            Paragraph(str(ruta), style_normal),  # Ruta como Paragraph para multilínea
+            Paragraph(str(turno), style_normal)
+        ])
+    
     table = Table(data, colWidths=col_widths)
     table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
@@ -230,11 +245,10 @@ def generate_filtered_pdf(df, mes, anio, mes_nombre):
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, -1), 10),  # Reducir tamaño de fuente para mejor ajuste
+        ('FONTSIZE', (0, 0), (-1, -1), 10),
         ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
         ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
         ('GRID', (0, 0), (-1, -1), 1, colors.black),
-        ('WORDWRAP', (0, 0), (-1, -1), True),  # Habilitar ajuste de texto
     ]))
     
     # Asegurar que la tabla no exceda el ancho de la página
