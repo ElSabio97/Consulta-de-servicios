@@ -140,7 +140,7 @@ def generate_pdf(df, mes, anio, mes_nombre):
 # Función para generar el PDF sencillo (solo CO)
 def generate_filtered_pdf(df, mes, anio, mes_nombre):
     """
-    Genera un PDF sencillo con Fecha, Ruta, Turno, filtrando filas con 'CO' en Servicio.
+    Genera un PDF sencillo con Fecha, Ruta, Turno, agrupando vuelos por día.
     """
     df['parsed_date'] = df['Inicio'].apply(parse_date)
     # Filtrar por mes, año y filas donde Servicio contiene "CO"
@@ -152,14 +152,17 @@ def generate_filtered_pdf(df, mes, anio, mes_nombre):
     
     # Crear columnas personalizadas
     df_filtered = df_filtered.copy()
-    df_filtered['Fecha'] = df_filtered['Inicio']
+    df_filtered['Fecha'] = df_filtered['parsed_date'].dt.strftime("%d/%m/%Y")  # Solo fecha sin hora
     df_filtered['Ruta'] = df_filtered['Dep.'] + "-" + df_filtered['Arr.']
     df_filtered['Turno'] = df_filtered['parsed_date'].apply(
         lambda x: "Mañanas" if x.hour < 10 else "Tardes"
     )
     
-    # Seleccionar solo las columnas deseadas
-    df_final = df_filtered[['Fecha', 'Ruta', 'Turno']]
+    # Agrupar por fecha
+    df_grouped = df_filtered.groupby('Fecha').agg({
+        'Ruta': lambda x: ", ".join(x),
+        'Turno': lambda x: ", ".join(x)
+    }).reset_index()
     
     pdf_buffer = BytesIO()
     doc = SimpleDocTemplate(pdf_buffer, pagesize=letter)
@@ -172,7 +175,7 @@ def generate_filtered_pdf(df, mes, anio, mes_nombre):
     elements.append(Paragraph("<br/><br/>", styles['Normal']))  # Espacio
     
     # Crear tabla
-    data = [df_final.columns.tolist()] + df_final.values.tolist()
+    data = [['Fecha', 'Ruta', 'Turno']] + df_grouped.values.tolist()
     table = Table(data)
     table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
