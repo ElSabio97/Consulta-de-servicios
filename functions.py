@@ -1,8 +1,9 @@
 import streamlit as st
 import pandas as pd
+import requests
+import json
 from bs4 import BeautifulSoup
 from io import StringIO, BytesIO
-import json
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseUpload
@@ -14,6 +15,27 @@ from reportlab.lib.styles import getSampleStyleSheet
 
 # Definir los scopes necesarios
 SCOPES = ['https://www.googleapis.com/auth/drive']
+
+# URL del archivo airports.json en GitHub (reemplaza con tu URL real)
+AIRPORTS_URL = "https://github.com/ElSabio97/Consulta-de-servicios/blob/8d5a105dc225a3da402f0be7ac5bac251eb8146b/airports.json"
+
+# Función para cargar los datos de aeropuertos desde GitHub
+def load_airports_data():
+    try:
+        response = requests.get(AIRPORTS_URL)
+        response.raise_for_status()  # Lanza una excepción si la solicitud falla
+        airports_list = json.loads(response.text)
+        # Convertir la lista en un diccionario para búsqueda rápida por IATA
+        return {airport["IATA"]: airport["Name"] for airport in airports_list}
+    except requests.RequestException as e:
+        st.error(f"Error al descargar airports.json: {str(e)}")
+        return {}
+    except json.JSONDecodeError as e:
+        st.error(f"Error al parsear airports.json: {str(e)}")
+        return {}
+
+# Cargar los datos de aeropuertos al inicio (se almacena en memoria)
+AIRPORTS = load_airports_data()
 
 # Función para obtener el servicio de Google Drive
 def get_drive_service():
@@ -140,7 +162,7 @@ def generate_pdf(df, mes, anio, mes_nombre):
 # Función para generar el PDF sencillo (solo CO)
 def generate_filtered_pdf(df, mes, anio, mes_nombre):
     """
-    Genera un PDF sencillo con Fecha, Ruta, Turno, agrupando vuelos por día.
+    Genera un PDF sencillo con Fecha, Ruta, Turno, agrupando vuelos por día y usando nombres de aeropuertos.
     """
     df['parsed_date'] = df['Inicio'].apply(parse_date)
     # Filtrar por mes, año y filas donde Servicio contiene "CO"
@@ -160,11 +182,13 @@ def generate_filtered_pdf(df, mes, anio, mes_nombre):
     
     # Agrupar por fecha y procesar rutas y turnos
     def format_routes(routes):
-        # Convertir las rutas en una lista de aeropuertos
+        # Convertir las rutas en una lista de aeropuertos con nombres
         airports = []
         for route in routes:
             dep, arr = route.split("-")
-            airports.extend([dep, arr])
+            dep_name = AIRPORTS.get(dep, dep)  # Usar el nombre si existe, sino el código
+            arr_name = AIRPORTS.get(arr, arr)
+            airports.extend([dep_name, arr_name])
         # Eliminar duplicados consecutivos
         unique_route = [airports[0]]
         for airport in airports[1:]:
@@ -207,6 +231,7 @@ def generate_filtered_pdf(df, mes, anio, mes_nombre):
     doc.build(elements)
     pdf_buffer.seek(0)
     return pdf_buffer
+
 # Función para actualizar CDU.csv
 def update_cdu_csv(data, folder_id, file_name):
     service = get_drive_service()
