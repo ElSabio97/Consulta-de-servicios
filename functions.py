@@ -158,10 +158,23 @@ def generate_filtered_pdf(df, mes, anio, mes_nombre):
         lambda x: "Mañanas" if x.hour < 10 else "Tardes"
     )
     
-    # Agrupar por fecha
+    # Agrupar por fecha y procesar rutas y turnos
+    def format_routes(routes):
+        # Convertir las rutas en una lista de aeropuertos
+        airports = []
+        for route in routes:
+            dep, arr = route.split("-")
+            airports.extend([dep, arr])
+        # Eliminar duplicados consecutivos
+        unique_route = [airports[0]]
+        for airport in airports[1:]:
+            if airport != unique_route[-1]:
+                unique_route.append(airport)
+        return " - ".join(unique_route)
+    
     df_grouped = df_filtered.groupby('Fecha').agg({
-        'Ruta': lambda x: ", ".join(x),
-        'Turno': lambda x: ", ".join(x)
+        'Ruta': format_routes,
+        'Turno': lambda x: ", ".join(sorted(set(x)))  # Eliminar duplicados y ordenar
     }).reset_index()
     
     pdf_buffer = BytesIO()
