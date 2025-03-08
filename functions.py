@@ -172,9 +172,11 @@ def generate_filtered_pdf(df, mes, anio, mes_nombre):
                 unique_route.append(airport)
         return " - ".join(unique_route)
     
+    # Ordenar por fecha y hora para tomar el primer turno
+    df_filtered = df_filtered.sort_values('parsed_date')
     df_grouped = df_filtered.groupby('Fecha').agg({
         'Ruta': format_routes,
-        'Turno': lambda x: ", ".join(sorted(set(x)))  # Eliminar duplicados y ordenar
+        'Turno': 'first'  # Tomar solo el primer turno del día
     }).reset_index()
     
     pdf_buffer = BytesIO()
@@ -205,7 +207,6 @@ def generate_filtered_pdf(df, mes, anio, mes_nombre):
     doc.build(elements)
     pdf_buffer.seek(0)
     return pdf_buffer
-
 # Función para actualizar CDU.csv
 def update_cdu_csv(data, folder_id, file_name):
     service = get_drive_service()
