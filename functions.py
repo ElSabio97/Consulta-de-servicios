@@ -8,8 +8,9 @@ from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseUpload
 from datetime import datetime
 from reportlab.lib.pagesizes import letter
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
 from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet
 
 # Definir los scopes necesarios
 SCOPES = ['https://www.googleapis.com/auth/drive']
@@ -100,14 +101,24 @@ def update_csv_in_drive(csv_data, folder_id, file_name):
         file_metadata = {'name': file_name, 'parents': [folder_id]}
         service.files().create(body=file_metadata, media_body=media).execute()
 
-# Función para generar el PDF completo
-def generate_pdf(df, mes, anio):
+# Función para generar el PDF detallado
+def generate_pdf(df, mes, anio, mes_nombre):
     df['parsed_date'] = df['Inicio'].apply(parse_date)
     df_filtered = df[(df['parsed_date'].dt.month == mes) & (df['parsed_date'].dt.year == anio)]
     columns_to_keep = [col for col in df.columns if col not in ['Función', 'Flota', 'parsed_date']]
     df_filtered = df_filtered[columns_to_keep]
+    
     pdf_buffer = BytesIO()
     doc = SimpleDocTemplate(pdf_buffer, pagesize=letter)
+    elements = []
+    
+    # Añadir título
+    styles = getSampleStyleSheet()
+    title = Paragraph(f"Programación de vuelos del mes de {mes_nombre}", styles['Title'])
+    elements.append(title)
+    elements.append(Paragraph("<br/><br/>", styles['Normal']))  # Espacio
+    
+    # Crear tabla
     data = [df_filtered.columns.tolist()] + df_filtered.values.tolist()
     table = Table(data)
     table.setStyle(TableStyle([
@@ -120,15 +131,16 @@ def generate_pdf(df, mes, anio):
         ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
         ('GRID', (0, 0), (-1, -1), 1, colors.black),
     ]))
-    elements = [table]
+    elements.append(table)
+    
     doc.build(elements)
     pdf_buffer.seek(0)
     return pdf_buffer
 
-# Función para generar el PDF filtrado (solo CO)
-def generate_filtered_pdf(df, mes, anio):
+# Función para generar el PDF sencillo (solo CO)
+def generate_filtered_pdf(df, mes, anio, mes_nombre):
     """
-    Genera un PDF con las columnas Inicio, Dep., Fin, Arr., filtrando filas con 'CO' en Servicio.
+    Genera un PDF sencillo con Fecha, Ruta, Turno, filtrando filas con 'CO' en Servicio.
     """
     df['parsed_date'] = df['Inicio'].apply(parse_date)
     # Filtrar por mes, año y filas donde Servicio contiene "CO"
@@ -137,13 +149,30 @@ def generate_filtered_pdf(df, mes, anio):
         (df['parsed_date'].dt.year == anio) & 
         (df['Servicio'].str.contains("CO", case=False, na=False))
     ]
+    
+    # Crear columnas personalizadas
+    df_filtered = df_filtered.copy()
+    df_filtered['Fecha'] = df_filtered['Inicio']
+    df_filtered['Ruta'] = df_filtered['Dep.'] + "-" + df_filtered['Arr.']
+    df_filtered['Turno'] = df_filtered['parsed_date'].apply(
+        lambda x: "Mañanas" if x.hour < 10 else "Tardes"
+    )
+    
     # Seleccionar solo las columnas deseadas
-    columns_to_keep = ['Inicio', 'Dep.', 'Fin', 'Arr.']
-    df_filtered = df_filtered[columns_to_keep]
+    df_final = df_filtered[['Fecha', 'Ruta', 'Turno']]
     
     pdf_buffer = BytesIO()
     doc = SimpleDocTemplate(pdf_buffer, pagesize=letter)
-    data = [df_filtered.columns.tolist()] + df_filtered.values.tolist()
+    elements = []
+    
+    # Añadir título
+    styles = getSampleStyleSheet()
+    title = Paragraph(f"Programación de vuelos del mes de {mes_nombre}", styles['Title'])
+    elements.append(title)
+    elements.append(Paragraph("<br/><br/>", styles['Normal']))  # Espacio
+    
+    # Crear tabla
+    data = [df_final.columns.tolist()] + df_final.values.tolist()
     table = Table(data)
     table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
@@ -155,7 +184,8 @@ def generate_filtered_pdf(df, mes, anio):
         ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
         ('GRID', (0, 0), (-1, -1), 1, colors.black),
     ]))
-    elements = [table]
+    elements.append(table)
+    
     doc.build(elements)
     pdf_buffer.seek(0)
     return pdf_buffer
