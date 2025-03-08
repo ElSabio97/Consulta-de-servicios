@@ -221,8 +221,7 @@ def generate_filtered_pdf(df, mes, anio, mes_nombre):
     # Definir anchos de columnas proporcionales
     col_widths = [table_width * 0.2, table_width * 0.6, table_width * 0.2]  # 20%, 60%, 20%
     
-        # Crear tabla con ajuste de texto multilínea
-    from reportlab.platypus import Paragraph  # Asegúrate de que esto esté en los imports
+    # Crear tabla con ajuste de texto multilínea
     styles = getSampleStyleSheet()
     style_normal = styles['Normal']
     style_normal.fontSize = 10
@@ -258,7 +257,7 @@ def generate_filtered_pdf(df, mes, anio, mes_nombre):
     doc.build(elements)
     pdf_buffer.seek(0)
     return pdf_buffer
-    
+
 # Función para actualizar CDU.csv
 def update_cdu_csv(data, folder_id, file_name):
     service = get_drive_service()
