@@ -19,8 +19,8 @@ mes_actual = meses[datetime.now().month - 1]  # Mes actual (0-based index)
 mes_seleccionado = st.selectbox("Selecciona un mes", meses, index=meses.index(mes_actual))
 anio_seleccionado = st.number_input("Selecciona un año", min_value=2020, max_value=2030, value=datetime.now().year)
 
-# Botón para el PDF completo
-if st.button("Generar PDF"):
+# Botón para el PDF detallado
+if st.button("Generar progra detallada"):
     try:
         folder_id = '1B8gnCmbBaGMBT77ba4ntjpZj_NkJcvuI'
         file_name = 'Consulta_de_servicios.csv'
@@ -31,9 +31,9 @@ if st.button("Generar PDF"):
             st.error("No se encontró el archivo CSV en Google Drive.")
         else:
             mes_num = meses.index(mes_seleccionado) + 1
-            pdf_buffer = generate_pdf(df, mes_num, anio_seleccionado)
+            pdf_buffer = generate_pdf(df, mes_num, anio_seleccionado, mes_seleccionado)
             st.download_button(
-                label="Descargar PDF completo",
+                label="Descargar progra detallada",
                 data=pdf_buffer,
                 file_name=f"Programa_{mes_seleccionado}_{anio_seleccionado}.pdf",
                 mime="application/pdf"
@@ -41,8 +41,8 @@ if st.button("Generar PDF"):
     except Exception as e:
         st.error(f"Error al generar el PDF: {str(e)}")
 
-# Botón para el PDF filtrado (solo CO)
-if st.button("Generar PDF filtrado (CO)"):
+# Botón para el PDF sencillo (CO)
+if st.button("Generar progra sencilla"):
     try:
         folder_id = '1B8gnCmbBaGMBT77ba4ntjpZj_NkJcvuI'
         file_name = 'Consulta_de_servicios.csv'
@@ -53,9 +53,9 @@ if st.button("Generar PDF filtrado (CO)"):
             st.error("No se encontró el archivo CSV en Google Drive.")
         else:
             mes_num = meses.index(mes_seleccionado) + 1
-            pdf_buffer = generate_filtered_pdf(df, mes_num, anio_seleccionado)
+            pdf_buffer = generate_filtered_pdf(df, mes_num, anio_seleccionado, mes_seleccionado)
             st.download_button(
-                label="Descargar PDF filtrado (CO)",
+                label="Descargar progra sencilla",
                 data=pdf_buffer,
                 file_name=f"Programa_CO_{mes_seleccionado}_{anio_seleccionado}.pdf",
                 mime="application/pdf"
