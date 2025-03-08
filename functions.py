@@ -100,7 +100,7 @@ def update_csv_in_drive(csv_data, folder_id, file_name):
         file_metadata = {'name': file_name, 'parents': [folder_id]}
         service.files().create(body=file_metadata, media_body=media).execute()
 
-# Función para generar el PDF
+# Función para generar el PDF completo
 def generate_pdf(df, mes, anio):
     df['parsed_date'] = df['Inicio'].apply(parse_date)
     df_filtered = df[(df['parsed_date'].dt.month == mes) & (df['parsed_date'].dt.year == anio)]
@@ -125,41 +125,58 @@ def generate_pdf(df, mes, anio):
     pdf_buffer.seek(0)
     return pdf_buffer
 
+# Función para generar el PDF filtrado (solo CO)
+def generate_filtered_pdf(df, mes, anio):
+    """
+    Genera un PDF con las columnas Inicio, Dep., Fin, Arr., filtrando filas con 'CO' en Servicio.
+    """
+    df['parsed_date'] = df['Inicio'].apply(parse_date)
+    # Filtrar por mes, año y filas donde Servicio contiene "CO"
+    df_filtered = df[
+        (df['parsed_date'].dt.month == mes) & 
+        (df['parsed_date'].dt.year == anio) & 
+        (df['Servicio'].str.contains("CO", case=False, na=False))
+    ]
+    # Seleccionar solo las columnas deseadas
+    columns_to_keep = ['Inicio', 'Dep.', 'Fin', 'Arr.']
+    df_filtered = df_filtered[columns_to_keep]
+    
+    pdf_buffer = BytesIO()
+    doc = SimpleDocTemplate(pdf_buffer, pagesize=letter)
+    data = [df_filtered.columns.tolist()] + df_filtered.values.tolist()
+    table = Table(data)
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 12),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+    ]))
+    elements = [table]
+    doc.build(elements)
+    pdf_buffer.seek(0)
+    return pdf_buffer
+
 # Función para actualizar CDU.csv
 def update_cdu_csv(data, folder_id, file_name):
-    """
-    Actualiza o crea CDU.csv en Google Drive con una nueva fila de datos.
-    """
     service = get_drive_service()
-    
-    # Crear DataFrame con la nueva fila
     new_df = pd.DataFrame([data], columns=["DATE", "FLT NUM", "OUT", "OFF", "ON", "IN"])
-    
-    # Descargar el CSV existente si existe
     existing_df = download_csv_from_drive(service, folder_id, file_name)
-    
-    # Combinar con los datos existentes o usar solo la nueva fila
     if existing_df is not None:
-        # Asegurarse de que las columnas coincidan
         existing_df = existing_df.reindex(columns=["DATE", "FLT NUM", "OUT", "OFF", "ON", "IN"])
         final_df = pd.concat([existing_df, new_df], ignore_index=True)
     else:
         final_df = new_df
-    
-    # Convertir a CSV
     csv_buffer = StringIO()
     final_df.to_csv(csv_buffer, index=False, encoding='utf-8')
     csv_data_final = csv_buffer.getvalue()
-    
-    # Debugging: Mostrar el contenido del CSV antes de subirlo
-    print("Contenido de CDU.csv antes de subir:", csv_data_final)
-    
-    # Subir o actualizar en Drive
     query = f"'{folder_id}' in parents and name = '{file_name}' and trashed = false"
     response = service.files().list(q=query, spaces='drive', fields='files(id, name)').execute()
     files = response.get('files', [])
     media = MediaIoBaseUpload(StringIO(csv_data_final), mimetype='text/csv')
-    
     if files:
         file_id = files[0]['id']
         service.files().update(fileId=file_id, media_body=media).execute()
