@@ -1,5 +1,5 @@
 import streamlit as st
-from functions import process_html_table, update_csv_in_drive, download_csv_from_drive, generate_pdf, update_cdu_csv, get_drive_service
+from functions import process_html_table, update_csv_in_drive, download_csv_from_drive, generate_pdf, generate_filtered_pdf, update_cdu_csv, get_drive_service
 from datetime import datetime
 
 # Configuración de la página
@@ -9,7 +9,7 @@ st.set_page_config(page_title="Actualizar CSV en Drive", page_icon="📊")
 st.title("¿Qué está haciendo Pedrito?")
 st.write("Descarga la progra que quieras seleccionando el mes")
 
-# Selector de mes y generación de PDF
+# Selector de mes y generación de PDFs
 st.subheader("Descargar programación")
 meses = [
     "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
@@ -19,6 +19,7 @@ mes_actual = meses[datetime.now().month - 1]  # Mes actual (0-based index)
 mes_seleccionado = st.selectbox("Selecciona un mes", meses, index=meses.index(mes_actual))
 anio_seleccionado = st.number_input("Selecciona un año", min_value=2020, max_value=2030, value=datetime.now().year)
 
+# Botón para el PDF completo
 if st.button("Generar PDF"):
     try:
         folder_id = '1B8gnCmbBaGMBT77ba4ntjpZj_NkJcvuI'
@@ -32,13 +33,35 @@ if st.button("Generar PDF"):
             mes_num = meses.index(mes_seleccionado) + 1
             pdf_buffer = generate_pdf(df, mes_num, anio_seleccionado)
             st.download_button(
-                label="Descargar PDF",
+                label="Descargar PDF completo",
                 data=pdf_buffer,
                 file_name=f"Programa_{mes_seleccionado}_{anio_seleccionado}.pdf",
                 mime="application/pdf"
             )
     except Exception as e:
         st.error(f"Error al generar el PDF: {str(e)}")
+
+# Botón para el PDF filtrado (solo CO)
+if st.button("Generar PDF filtrado (CO)"):
+    try:
+        folder_id = '1B8gnCmbBaGMBT77ba4ntjpZj_NkJcvuI'
+        file_name = 'Consulta_de_servicios.csv'
+        service = get_drive_service()
+        df = download_csv_from_drive(service, folder_id, file_name)
+        
+        if df is None:
+            st.error("No se encontró el archivo CSV en Google Drive.")
+        else:
+            mes_num = meses.index(mes_seleccionado) + 1
+            pdf_buffer = generate_filtered_pdf(df, mes_num, anio_seleccionado)
+            st.download_button(
+                label="Descargar PDF filtrado (CO)",
+                data=pdf_buffer,
+                file_name=f"Programa_CO_{mes_seleccionado}_{anio_seleccionado}.pdf",
+                mime="application/pdf"
+            )
+    except Exception as e:
+        st.error(f"Error al generar el PDF filtrado: {str(e)}")
 
 # Botón para abrir el formulario de CDU
 st.subheader("Añadir datos a CDU.csv")
