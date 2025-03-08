@@ -33,7 +33,7 @@ if st.button("Generar progra detallada"):
             mes_num = meses.index(mes_seleccionado) + 1
             pdf_buffer = generate_pdf(df, mes_num, anio_seleccionado, mes_seleccionado)
             st.download_button(
-                label="Descargar progra detallada",
+                label="Descargar progra",
                 data=pdf_buffer,
                 file_name=f"Programa_{mes_seleccionado}_{anio_seleccionado}.pdf",
                 mime="application/pdf"
@@ -55,7 +55,7 @@ if st.button("Generar progra sencilla"):
             mes_num = meses.index(mes_seleccionado) + 1
             pdf_buffer = generate_filtered_pdf(df, mes_num, anio_seleccionado, mes_seleccionado)
             st.download_button(
-                label="Descargar progra sencilla",
+                label="Descargar progra",
                 data=pdf_buffer,
                 file_name=f"Programa_CO_{mes_seleccionado}_{anio_seleccionado}.pdf",
                 mime="application/pdf"
