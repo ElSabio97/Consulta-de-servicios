@@ -26,7 +26,7 @@ def load_airports_data():
         response.raise_for_status()  # Lanza una excepción si la solicitud falla
         airports_list = json.loads(response.text)
         # Convertir la lista en un diccionario para búsqueda rápida por IATA
-        return {airport["IATA"]: airport["Name"] for airport in airports_list}
+        return {airport["IATA"]: airport["City"] for airport in airports_list}
     except requests.RequestException as e:
         st.error(f"Error al descargar airports.json: {str(e)}")
         return {}
