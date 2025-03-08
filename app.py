@@ -9,11 +9,11 @@ st.set_page_config(page_title="Actualizar CSV en Drive", page_icon="📊")
 st.title("¿Qué está haciendo Pedrito?")
 st.write("Descarga la progra que quieras seleccionando el mes")
 
-# Área de texto para pegar la tabla HTML
-html_input = st.text_area("Pega aquí la tabla HTML", height=300)
-
-# Botón para procesar y actualizar
+# Botón para procesar y actualizar directamente desde el portapapeles
+st.write("Copia la tabla HTML al portapapeles y haz clic en 'Actualizar CSV'.")
 if st.button("Actualizar CSV"):
+    # Usar un campo de texto oculto para pegar el contenido del portapapeles
+    html_input = st.text_input("Pega aquí (Ctrl+V)", value="", key="clipboard_input", label_visibility="collapsed")
     if html_input:
         try:
             csv_data = process_html_table(html_input)
@@ -24,7 +24,7 @@ if st.button("Actualizar CSV"):
         except Exception as e:
             st.error(f"Error: {str(e)}")
     else:
-        st.warning("Por favor, pega una tabla HTML antes de actualizar.")
+        st.warning("Por favor, pega la tabla HTML (Ctrl+V) después de hacer clic en el botón.")
 
 # Selector de mes y generación de PDF
 st.subheader("Generar PDF por mes")
