@@ -213,25 +213,38 @@ def generate_filtered_pdf(df, mes, anio, mes_nombre):
     elements.append(title)
     elements.append(Paragraph("<br/><br/>", styles['Normal']))  # Espacio
     
-    # Crear tabla
+    # Definir el ancho máximo de la tabla con márgenes
+    page_width = letter[0]  # 612 puntos
+    margin = 72  # 1 pulgada (72 puntos) de margen a cada lado
+    table_width = page_width - 2 * margin  # 468 puntos
+    
+    # Definir anchos de columnas proporcionales
+    col_widths = [table_width * 0.2, table_width * 0.6, table_width * 0.2]  # 20%, 60%, 20%
+    
+    # Crear tabla con ajuste de texto
     data = [['Fecha', 'Ruta', 'Turno']] + df_grouped.values.tolist()
-    table = Table(data)
+    table = Table(data, colWidths=col_widths)
     table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, 0), 12),
+        ('FONTSIZE', (0, 0), (-1, -1), 10),  # Reducir tamaño de fuente para mejor ajuste
         ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
         ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
         ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('WORDWRAP', (0, 0), (-1, -1), True),  # Habilitar ajuste de texto
     ]))
-    elements.append(table)
     
+    # Asegurar que la tabla no exceda el ancho de la página
+    table._argW = col_widths  # Forzar anchos de columna
+    
+    elements.append(table)
     doc.build(elements)
     pdf_buffer.seek(0)
     return pdf_buffer
-
+    
 # Función para actualizar CDU.csv
 def update_cdu_csv(data, folder_id, file_name):
     service = get_drive_service()
