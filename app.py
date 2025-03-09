@@ -3,7 +3,7 @@ from functions import process_html_table, update_csv_in_drive, download_csv_from
 from datetime import datetime
 
 # Configuración de la página
-st.set_page_config(page_title="Progra Pedrito", page_icon="✈︎")
+st.set_page_config(page_title="Progra Pedrito", page_icon="🛬")
 
 # Título y descripción
 st.title("¿Qué está haciendo Pedrito?")
