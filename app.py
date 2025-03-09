@@ -3,7 +3,7 @@ from functions import process_html_table, update_csv_in_drive, download_csv_from
 from datetime import datetime
 
 # Configuración de la página
-st.set_page_config(page_title="Actualizar CSV en Drive", page_icon="📊")
+st.set_page_config(page_title="Progra Pedrito", page_icon="✈︎")
 
 # Título y descripción
 st.title("¿Qué está haciendo Pedrito?")
@@ -64,8 +64,8 @@ if st.button("Generar progra sencilla"):
         st.error(f"Error al generar el PDF filtrado: {str(e)}")
 
 # Botón para abrir el formulario de CDU
-st.subheader("Añadir datos a CDU.csv")
-with st.expander("Añadir entrada a CDU", expanded=False):
+st.subheader("Cosas mías")
+with st.expander("Añadir entrada desde CDU", expanded=False):
     with st.form(key='cdu_form'):
         st.write("Ingrese los datos para CDU.csv")
         date = st.text_input("DATE", value=datetime.now().strftime("%d/%m/%Y %H:%M"))
