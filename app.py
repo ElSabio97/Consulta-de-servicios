@@ -1,5 +1,5 @@
 import streamlit as st
-from functions import process_html_table, update_csv_in_drive, download_csv_from_drive, generate_pdf, generate_filtered_pdf, update_cdu_csv, get_drive_service
+from functions import process_html_table, update_csv_in_drive, download_csv_from_drive, generate_pdf, generate_filtered_pdf, update_cdu_csv, get_drive_service, parse_date
 from datetime import datetime
 
 # Configuración de la página
@@ -61,7 +61,7 @@ if st.button("Generar progra sencilla"):
                 mime="application/pdf"
             )
             # Filtrar el DataFrame y guardarlo en session_state
-            df['parsed_date'] = df['Inicio'].apply(lambda x: datetime.strptime(str(x).replace(" (LT)", "").strip(), "%d/%m/%Y %H:%M"))
+            df['parsed_date'] = df['Inicio'].apply(parse_date)  # Usar parse_date para manejar múltiples formatos
             df_filtered = df[
                 (df['parsed_date'].dt.month == mes_num) & 
                 (df['parsed_date'].dt.year == anio_seleccionado) & 
@@ -82,9 +82,9 @@ if st.session_state.get('progra_sencilla_generada', False):
             df_filtered = st.session_state['df_filtered']
             st.write(f"Datos cargados para cálculo: {len(df_filtered)} filas")  # Depuración
             
-            # Asegurarse de que las columnas 'Inicio' y 'Fin' estén en formato datetime
-            df_filtered['inicio_dt'] = df_filtered['Inicio'].apply(lambda x: datetime.strptime(str(x).replace(" (LT)", "").strip(), "%d/%m/%Y %H:%M"))
-            df_filtered['fin_dt'] = df_filtered['Fin'].apply(lambda x: datetime.strptime(str(x).replace(" (LT)", "").strip(), "%d/%m/%Y %H:%M"))
+            # Convertir 'Inicio' y 'Fin' a datetime usando parse_date
+            df_filtered['inicio_dt'] = df_filtered['Inicio'].apply(parse_date)
+            df_filtered['fin_dt'] = df_filtered['Fin'].apply(parse_date)
             
             # Calcular la diferencia de tiempo en horas para cada vuelo
             df_filtered['horas_vuelo'] = (df_filtered['fin_dt'] - df_filtered['inicio_dt']).dt.total_seconds() / 3600
