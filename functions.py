@@ -281,20 +281,3 @@ def update_cdu_csv(data, folder_id, file_name):
     else:
         file_metadata = {'name': file_name, 'parents': [folder_id]}
         service.files().create(body=file_metadata, media_body=media).execute()
-
-def calculate_flight_hours(df, mes, anio):
-    df['parsed_date'] = df['Inicio'].apply(parse_date)
-    df_filtered = df[(df['parsed_date'].dt.month == mes) & (df['parsed_date'].dt.year == anio)]
-    
-    def calculate_duration(row):
-        try:
-            out_time = parse_date(row['OUT'])
-            in_time = parse_date(row['IN'])
-            duration = in_time - out_time
-            return duration.total_seconds() / 3600  # Convertir a horas
-        except Exception:
-            return 0
-    
-    df_filtered['duration'] = df_filtered.apply(calculate_duration, axis=1)
-    total_hours = df_filtered['duration'].sum()
-    return total_hours

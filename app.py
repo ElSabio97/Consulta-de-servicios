@@ -1,5 +1,5 @@
 import streamlit as st
-from functions import process_html_table, update_csv_in_drive, download_csv_from_drive, generate_pdf, generate_filtered_pdf, update_cdu_csv, get_drive_service, calculate_flight_hours
+from functions import process_html_table, update_csv_in_drive, download_csv_from_drive, generate_pdf, generate_filtered_pdf, update_cdu_csv, get_drive_service
 from datetime import datetime
 
 # Configuración de la página
@@ -62,24 +62,6 @@ if st.button("Generar progra sencilla"):
             )
     except Exception as e:
         st.error(f"Error al generar el PDF filtrado: {str(e)}")
-
-# Botón para calcular las horas de vuelo
-st.subheader("Calcular horas de vuelo")
-if st.button("Calcular horas de vuelo"):
-    try:
-        folder_id = '1B8gnCmbBaGMBT77ba4ntjpZj_NkJcvuI'
-        file_name = 'Consulta_de_servicios.csv'
-        service = get_drive_service()
-        df = download_csv_from_drive(service, folder_id, file_name)
-        
-        if df is None:
-            st.error("No se encontró el archivo CSV en Google Drive.")
-        else:
-            mes_num = meses.index(mes_seleccionado) + 1
-            total_hours = calculate_flight_hours(df, mes_num, anio_seleccionado)
-            st.success(f"Total de horas de vuelo para {mes_seleccionado} {anio_seleccionado}: {total_hours} horas")
-    except Exception as e:
-        st.error(f"Error al calcular las horas de vuelo: {str(e)}")
 
 # Botón para abrir el formulario de CDU
 st.subheader("Cosas mías")
