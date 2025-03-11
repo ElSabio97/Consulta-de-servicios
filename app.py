@@ -64,6 +64,7 @@ if st.button("Generar progra sencilla"):
         st.error(f"Error al generar el PDF filtrado: {str(e)}")
 
 # Botón para calcular las horas de vuelo
+st.subheader("Calcular horas de vuelo")
 if st.button("Calcular horas de vuelo"):
     try:
         folder_id = '1B8gnCmbBaGMBT77ba4ntjpZj_NkJcvuI'
