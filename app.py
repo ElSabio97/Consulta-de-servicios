@@ -80,7 +80,6 @@ if st.session_state.get('progra_sencilla_generada', False):
     if st.button("Calcular horas de vuelo"):
         try:
             df_filtered = st.session_state['df_filtered']
-            st.write(f"Datos cargados para cálculo: {len(df_filtered)} filas")  # Depuración
             
             # Convertir 'Inicio' y 'Fin' a datetime usando parse_date
             df_filtered['inicio_dt'] = df_filtered['Inicio'].apply(parse_date)
