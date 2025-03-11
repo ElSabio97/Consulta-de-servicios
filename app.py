@@ -70,7 +70,6 @@ if st.button("Generar progra sencilla"):
             st.session_state['df_filtered'] = df_filtered
             st.session_state['progra_sencilla_generada'] = True  # Bandera para mostrar el botón
             st.success("Programa sencilla generada. Ahora puedes calcular las horas de vuelo.")
-            st.write(f"Filas en df_filtered: {len(df_filtered)}")  # Depuración
     except Exception as e:
         st.error(f"Error al generar el PDF filtrado: {str(e)}")
         st.session_state['progra_sencilla_generada'] = False  # Asegurar que no se muestre el botón si hay error
