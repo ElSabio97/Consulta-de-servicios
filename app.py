@@ -41,7 +41,7 @@ if st.button("Generar progra detallada"):
     except Exception as e:
         st.error(f"Error al generar el PDF: {str(e)}")
 
-# Botón para el PDF sencillo (CO) y cálculo de horas
+# Botón para el PDF sencillo (CO) y preparación para cálculo de horas
 if st.button("Generar progra sencilla"):
     try:
         folder_id = '1B8gnCmbBaGMBT77ba4ntjpZj_NkJcvuI'
@@ -60,7 +60,7 @@ if st.button("Generar progra sencilla"):
                 file_name=f"Programa_CO_{mes_seleccionado}_{anio_seleccionado}.pdf",
                 mime="application/pdf"
             )
-            # Guardar el DataFrame filtrado en session_state para usarlo en el cálculo de horas
+            # Filtrar el DataFrame y guardarlo en session_state
             df['parsed_date'] = df['Inicio'].apply(lambda x: datetime.strptime(str(x).replace(" (LT)", "").strip(), "%d/%m/%Y %H:%M"))
             df_filtered = df[
                 (df['parsed_date'].dt.month == mes_num) & 
@@ -68,28 +68,36 @@ if st.button("Generar progra sencilla"):
                 (df['Servicio'].str.contains("CO", case=False, na=False))
             ]
             st.session_state['df_filtered'] = df_filtered
+            st.session_state['progra_sencilla_generada'] = True  # Bandera para mostrar el botón
             st.success("Programa sencilla generada. Ahora puedes calcular las horas de vuelo.")
+            st.write(f"Filas en df_filtered: {len(df_filtered)}")  # Depuración
     except Exception as e:
         st.error(f"Error al generar el PDF filtrado: {str(e)}")
+        st.session_state['progra_sencilla_generada'] = False  # Asegurar que no se muestre el botón si hay error
 
 # Botón para calcular las horas de vuelo
-if 'df_filtered' in st.session_state and st.button("Calcular horas de vuelo"):
-    try:
-        df_filtered = st.session_state['df_filtered']
-        # Asegurarse de que las columnas 'Inicio' y 'Fin' estén en formato datetime
-        df_filtered['inicio_dt'] = df_filtered['Inicio'].apply(lambda x: datetime.strptime(str(x).replace(" (LT)", "").strip(), "%d/%m/%Y %H:%M"))
-        df_filtered['fin_dt'] = df_filtered['Fin'].apply(lambda x: datetime.strptime(str(x).replace(" (LT)", "").strip(), "%d/%m/%Y %H:%M"))
-        
-        # Calcular la diferencia de tiempo en horas para cada vuelo
-        df_filtered['horas_vuelo'] = (df_filtered['fin_dt'] - df_filtered['inicio_dt']).dt.total_seconds() / 3600
-        
-        # Sumar todas las horas de vuelo
-        total_horas = df_filtered['horas_vuelo'].sum()
-        
-        # Mostrar el resultado
-        st.write(f"Total de horas de vuelo para {mes_seleccionado} {anio_seleccionado}: **{total_horas:.2f} horas**")
-    except Exception as e:
-        st.error(f"Error al calcular las horas de vuelo: {str(e)}")
+if st.session_state.get('progra_sencilla_generada', False):
+    if st.button("Calcular horas de vuelo"):
+        try:
+            df_filtered = st.session_state['df_filtered']
+            st.write(f"Datos cargados para cálculo: {len(df_filtered)} filas")  # Depuración
+            
+            # Asegurarse de que las columnas 'Inicio' y 'Fin' estén en formato datetime
+            df_filtered['inicio_dt'] = df_filtered['Inicio'].apply(lambda x: datetime.strptime(str(x).replace(" (LT)", "").strip(), "%d/%m/%Y %H:%M"))
+            df_filtered['fin_dt'] = df_filtered['Fin'].apply(lambda x: datetime.strptime(str(x).replace(" (LT)", "").strip(), "%d/%m/%Y %H:%M"))
+            
+            # Calcular la diferencia de tiempo en horas para cada vuelo
+            df_filtered['horas_vuelo'] = (df_filtered['fin_dt'] - df_filtered['inicio_dt']).dt.total_seconds() / 3600
+            
+            # Sumar todas las horas de vuelo
+            total_horas = df_filtered['horas_vuelo'].sum()
+            
+            # Mostrar el resultado
+            st.write(f"Total de horas de vuelo para {mes_seleccionado} {anio_seleccionado}: **{total_horas:.2f} horas**")
+        except Exception as e:
+            st.error(f"Error al calcular las horas de vuelo: {str(e)}")
+else:
+    st.write("Primero genera la progra sencilla para calcular las horas de vuelo.")  # Mensaje aclaratorio
 
 # Botón para abrir el formulario de CDU
 st.subheader("Cosas mías")
